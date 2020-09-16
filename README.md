@@ -1,5 +1,9 @@
 # Disaster Response Pipeline Project
-
+In this project consits of three parts: 
+1) a NLP ETL script which loads in message data as well as their corresponding categories, clean the data and then saves everything in a new dataframe. 
+2) a machine learning message classification script which fits a randomtree model to the data and evaluates the model. The model can be obtipized using grid search or not. 
+3) a website app that desplays the results of the classification. 
+  
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 

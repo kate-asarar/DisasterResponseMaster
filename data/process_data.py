@@ -38,25 +38,29 @@ def clean_data(df):
 
     # change categories column names
     categories.columns = category_colnames
+
     # remove category names from values in columns and parse the values into int
     for column in categories:
         categories[column] = categories[column].apply(lambda x: re.sub(r'([^0-9])', '', x))
         categories[column] = categories[column].apply(lambda x: int(x))
 
+    categories = categories.replace({2:1})
     # replace categories in df with expanded categories
     df.drop(['categories'], axis=1, inplace=True)
-    df = pd.concat([df, categories], sort=False)
+    df = pd.concat([df, categories], axis = 1, sort=False)
+    
 
     # remove duplicates
     df = df.drop_duplicates()
-
     return df
 
 
 def save_data(df, database_filename):
     engine = create_engine('sqlite:///{}'.format(database_filename))
-    df.to_sql(database_filename, engine, index=False)
-    pass
+    df = df.dropna(axis=0)
+    engine.execute("DROP TABLE IF EXISTS DisasterResponse")
+    df.to_sql('DisasterResponse', engine, index=False)
+    print('Cleaned data saved to database!')
 
 def main():
     if len(sys.argv) == 4:
@@ -68,13 +72,10 @@ def main():
 
         print('Cleaning data...')
         df = clean_data(df)
-
+       
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
-        engine = create_engine('sqlite:///{}'.format(database_filepath))
-        df = df.dropna(axis=0)
-        engine.execute("DROP TABLE IF EXISTS DisasterResponse")
-        df.to_sql('DisasterResponse', engine, index=False)
-        print('Cleaned data saved to database!')
+        save_data(df, database_filepath)
+        
 
     else:
         print('Please provide the filepaths of the messages and categories ' \

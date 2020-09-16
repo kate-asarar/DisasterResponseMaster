@@ -1,5 +1,6 @@
-import sys
+# import libraries
 import sqlite3
+import sys
 import pandas as pd
 import re
 import sqlalchemy as db
@@ -12,10 +13,14 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from sklearn.pipeline import Pipeline
 from sklearn.multioutput import MultiOutputClassifier
+from sklearn.metrics import classification_report
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 import nltk
+from sklearn.model_selection import GridSearchCV
 nltk.download(['punkt', 'wordnet'])
 import numpy as np
+import _pickle as pickle
+from sklearn.multioutput import MultiOutputClassifier
 
 def load_data(database_filepath):
     engine = create_engine('sqlite:///{}'.format(database_filepath))
@@ -49,21 +54,30 @@ def create_model_pipeline(optimize):
         'tfidf__norm': ('l1', 'l2', None),
         }
 
-        cv = GridSearchCV(pipeline, param_grid=parameters, scoring='f1')
+        cv = GridSearchCV(pipeline, param_grid=parameters, scoring='f1_micro')
         return cv
     else:
         return pipeline
 
 
-def evaluate_model(model, X_test, Y_test, category_names):
+def evaluate_final_model(model, X_test, Y_test, category_names):
     y_pred = model.predict(X_test)
-    confusion_mat = confusion_matrix(Y_test, y_pred, labels=category_names)
+    confusion_mat = confusion_matrix(Y_test, y_pred, labels=category_names, average='micro')
     accuracy = (y_pred == Y_test).mean()
     return accuracy, confusion_mat
 
+def evaluate_model(model, X_test, Y_test, category_names):
+    y_pred = model.predict(X_test)
+    Y_test = np.array(Y_test)
+    for i in range(y_pred.shape[1]):
+        print(category_names[i])
+        classificationReport = classification_report(list(Y_test[:,i]), list(y_pred[:,i]))
+        print(classificationReport)
 
 def save_model(model, model_filepath):
-    pass
+    pkl_filename = model_filepath
+    with open(pkl_filename, 'wb') as file:
+        pickle.dump(model, file)
 
 
 def main():
@@ -71,10 +85,10 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y)
         
         print('Building model...')
-        model = create_model_pipeline(optimize=True)
+        model = create_model_pipeline(optimize=False)
         
         print('Training model...')
         model.fit(X_train, Y_train)
