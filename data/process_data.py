@@ -71,6 +71,7 @@ def main():
 
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         engine = create_engine('sqlite:///{}'.format(database_filepath))
+        df = df.dropna(axis=0)
         engine.execute("DROP TABLE IF EXISTS DisasterResponse")
         df.to_sql('DisasterResponse', engine, index=False)
         print('Cleaned data saved to database!')
