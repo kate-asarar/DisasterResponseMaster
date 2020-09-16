@@ -1,0 +1,7 @@
+pandas
+re
+sqlalchemy
+sqlite3
+sqlalchemy
+sklearn
+nltk
