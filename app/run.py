@@ -8,8 +8,9 @@ from nltk.tokenize import word_tokenize
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-import joblib
+from sklearn.externals import joblib
 from sqlalchemy import create_engine
+import plotly.express as px 
 
 
 app = Flask(__name__)
@@ -27,7 +28,7 @@ def tokenize(text):
 
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
-df = pd.read_sql_table('DisasterResponse', engine)
+df = pd.read_sql("SELECT * FROM DisasterResponse", engine)
 
 # load model
 model = joblib.load("../models/classifier.pkl")
@@ -39,9 +40,27 @@ model = joblib.load("../models/classifier.pkl")
 def index():
     
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    category_counts = {}
+    for column in df.columns[4:]:
+        try: 
+            category_counts[column] =df.groupby(column).count()['message'][1]
+        except:
+            category_counts[column] = 0
+    category_names = list(category_counts.keys())
+    
+    dict_categories = {}
+    genres = df['genre'].unique()
+    for genre in genres: 
+        df_genre = df[df['genre'] == genre]
+        for column in df_genre.columns[4:]:
+            try: 
+                category_counts[column] = df_genre.groupby(column).count()['message'][1]
+            except:
+                category_counts[column] = 0
+        dict_categories[genre] = category_counts
+    df_categories = pd.DataFrame(dict_categories)
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -49,8 +68,8 @@ def index():
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x= genre_names,
+                    y= genre_counts
                 )
             ],
 
@@ -61,6 +80,42 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+         {
+            'data': [
+                Bar(
+                    x= category_names,
+                    y= list(category_counts.values())
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        }, 
+         {
+            'data': [
+                px.bar (df_categories, 
+                        x = list(df_categories.index), 
+                        y = list(genres)
+                       )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Message categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
                 }
             }
         }
