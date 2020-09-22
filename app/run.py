@@ -10,7 +10,6 @@ from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
-import plotly.express as px 
 
 
 app = Flask(__name__)
@@ -42,26 +41,30 @@ def index():
     # extract data needed for visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    category_counts = {}
-    for column in df.columns[4:]:
-        try: 
-            category_counts[column] =df.groupby(column).count()['message'][1]
-        except:
-            category_counts[column] = 0
-    category_names = list(category_counts.keys())
-    
-    dict_categories = {}
-    genres = df['genre'].unique()
-    for genre in genres: 
-        df_genre = df[df['genre'] == genre]
-        for column in df_genre.columns[4:]:
+
+    # define function for counting messages by category
+    def get_category_count(df = df): 
+        category_counts = {}
+        for column in df.columns[4:]:
             try: 
-                category_counts[column] = df_genre.groupby(column).count()['message'][1]
+                category_counts[column] =df.groupby(column).count()['message'][1]
             except:
                 category_counts[column] = 0
-        dict_categories[genre] = category_counts
-    df_categories = pd.DataFrame(dict_categories)
+        return category_counts
+    # extract first visual 
+    category_counts = get_category_count()
+    category_names = list(category_counts.keys())
     
+
+    def get_category_count_per_genre():
+        dict_categories = {}
+        for genre in genres: 
+            df_genre = df[df['genre'] == genre]
+            dict_categories[genre] = get_category_count(df = df)
+        return pd.DataFrame(dict_categories)
+    genres = df['genre'].unique()
+    df_categories = get_category_count_per_genre()
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -103,9 +106,20 @@ def index():
         }, 
          {
             'data': [
-                px.bar (df_categories, 
-                        x = list(df_categories.index), 
-                        y = list(genres)
+                Bar (
+                     x = list(df_categories.index), 
+                     y = list(df_categories[genres[0]]),
+                     name = genres[0]
+                       ), 
+                Bar (
+                     x = list(df_categories.index), 
+                     y = list(df_categories[genres[1]]),
+                     name = genres[1]
+                       ), 
+                Bar (
+                     x = list(df_categories.index), 
+                     y = list(df_categories[genres[2]]),
+                     name = genres[2]
                        )
             ],
 
@@ -116,7 +130,8 @@ def index():
                 },
                 'xaxis': {
                     'title': "Category"
-                }
+                }, 
+                'barmode': 'stack'
             }
         }
     ]
