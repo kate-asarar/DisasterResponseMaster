@@ -59,13 +59,6 @@ def create_model_pipeline(optimize):
     else:
         return pipeline
 
-
-def evaluate_final_model(model, X_test, Y_test, category_names):
-    y_pred = model.predict(X_test)
-    confusion_mat = confusion_matrix(Y_test, y_pred, labels=category_names, average='micro')
-    accuracy = (y_pred == Y_test).mean()
-    return accuracy, confusion_mat
-
 def evaluate_model(model, X_test, Y_test, category_names):
     y_pred = model.predict(X_test)
     Y_test = np.array(Y_test)
