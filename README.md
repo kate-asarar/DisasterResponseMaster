@@ -4,7 +4,7 @@ This project consits of three parts:
 2) a machine learning message classification script which fits a randomtree model to the data and evaluates the model. The model can be obtipized using grid search or not. 
 3) a website app that desplays the results of the classification. 
 
-# The reposotory also contains the following data files in the data folder: 
+### The reposotory contains the following data files in the data folder: 
 1) disaster_messages.csv -- contains the messages that are to be classified 
 2) disaster_categories.csv -- contains the correct classification labels for the messages
   
